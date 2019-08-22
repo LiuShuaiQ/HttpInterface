@@ -32,7 +32,7 @@ public class HttpConnectionAction implements HttpAction {
                   URLEncoder.encode(data.getParams().get(i).getValue(), "utf-8")));
         }
       }
-      LogUtil.d("请求param ==> " + tempParams);
+      LogUtil.d("request param ==> " + tempParams);
       String requestUrl;
       if (data.getUrl().charAt(data.getUrl().length() - 1) == '?') {
         requestUrl = data.getUrl() + tempParams.toString();
@@ -63,13 +63,13 @@ public class HttpConnectionAction implements HttpAction {
         if (callback != null) {
           callback.onResponse(result);
         }
-        LogUtil.d("Get方式请求成功，result--->" + result);
+        LogUtil.d("request success, result--->" + result);
         return result;
       } else {
         if (callback != null) {
           callback.onError(new IllegalStateException("Http resp code is " + respCode));
         }
-        LogUtil.d("Get方式请求失败，code--->" + respCode);
+        LogUtil.d("request fail, code--->" + respCode);
       }
       urlConn.disconnect();
     } catch (Exception e) {
@@ -83,36 +83,21 @@ public class HttpConnectionAction implements HttpAction {
 
   public void downloadFile(HttpReqData data, String outFile, HttpCallback callback) {
     try {
-      // 新建一个URL对象
       URL url = new URL(data.getUrl());
-      // 打开一个HttpURLConnection连接
       HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      // 设置连接主机超时时间
       urlConn.setConnectTimeout(2 * 1000);
-      //设置从主机读取数据超时
       urlConn.setReadTimeout(2 * 1000);
-      // 设置是否使用缓存  默认是true
       urlConn.setUseCaches(true);
-      // 设置为Post请求
       urlConn.setRequestMethod("GET");
-      //urlConn设置请求头信息
-      //设置请求中的媒体类型信息。
       urlConn.setRequestProperty("Content-Type", "application/json");
-      //设置客户端与服务连接类型
       urlConn.addRequestProperty("Connection", "Keep-Alive");
-      // 开始连接
       if (callback != null) {
         callback.onStart();
       }
       urlConn.connect();
-      // 判断请求是否成功
-      //            156635325090151
-      //            156635325110866
-      //            156635325111255
-      //156643625257535
       int respCode = urlConn.getResponseCode();
       if (respCode == 200) {
-        LogUtil.d("文件开始下载" + data.getUrl());
+        LogUtil.d("download file ..." + data.getUrl());
         File descFile = new File(outFile);
         FileOutputStream fos = new FileOutputStream(descFile);
         byte[] buffer = new byte[1024];
@@ -136,9 +121,8 @@ public class HttpConnectionAction implements HttpAction {
         if (callback != null) {
           callback.onError(new IllegalStateException("Http resp code is " + respCode));
         }
-        LogUtil.d("文件下载失败" + outFile);
+        LogUtil.d("download file fail" + outFile);
       }
-      // 关闭连接
       urlConn.disconnect();
     } catch (Exception e) {
       if (callback != null) {
@@ -152,27 +136,16 @@ public class HttpConnectionAction implements HttpAction {
     try {
       String baseUrl = data.getUrl();
       File file = new File(uploadFile);
-      //新建url对象
       URL url = new URL(baseUrl);
-      //通过HttpURLConnection对象,向网络地址发送请求
       HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      //设置该连接允许读取
       urlConn.setDoOutput(true);
-      //设置该连接允许写入
       urlConn.setDoInput(true);
-      //设置不能适用缓存
       urlConn.setUseCaches(false);
-      //设置连接超时时间
-      urlConn.setConnectTimeout(5 * 1000);   //设置连接超时时间
-      //设置读取超时时间
-      urlConn.setReadTimeout(5 * 1000);   //读取超时
-      //设置连接方法post
+      urlConn.setConnectTimeout(5 * 1000);
+      urlConn.setReadTimeout(5 * 1000);
       urlConn.setRequestMethod("POST");
-      //设置维持长连接
       urlConn.setRequestProperty("connection", "Keep-Alive");
-      //设置文件字符集
       urlConn.setRequestProperty("Accept-Charset", "UTF-8");
-      //设置文件类型
       urlConn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + "*****");
       if (callback != null) {
         callback.onStart();
@@ -181,7 +154,6 @@ public class HttpConnectionAction implements HttpAction {
       String name = file.getName();
       DataOutputStream requestStream = new DataOutputStream(urlConn.getOutputStream());
       requestStream.writeBytes("--" + "*****" + "\r\n");
-      //发送文件参数信息
       StringBuilder tempParams = new StringBuilder();
       tempParams.append(
           "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + name + "\"; ");
@@ -201,7 +173,6 @@ public class HttpConnectionAction implements HttpAction {
       tempParams.append("\r\n");
       String params = tempParams.toString();
       requestStream.writeBytes(params);
-      //发送文件数据
       FileInputStream fileInput = new FileInputStream(file);
       int bytesRead;
       byte[] buffer = new byte[1024];
@@ -216,15 +187,14 @@ public class HttpConnectionAction implements HttpAction {
       fileInput.close();
       int statusCode = urlConn.getResponseCode();
       if (statusCode == 200) {
-        // 获取返回的数据
         String result = streamToString(urlConn.getInputStream(), callback);
         callback.onResponse(result);
-        LogUtil.d("上传成功，result--->" + result);
+        LogUtil.d("upload success, result--->" + result);
       } else {
         if (callback != null) {
           callback.onError(new IllegalStateException("Http resp code is " + statusCode));
         }
-        LogUtil.d("上传失败");
+        LogUtil.d("upload fail");
       }
     } catch (IOException e) {
       LogUtil.d(e.toString());
